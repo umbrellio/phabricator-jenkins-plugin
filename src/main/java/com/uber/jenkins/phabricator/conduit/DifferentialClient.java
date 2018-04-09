@@ -24,6 +24,7 @@ import com.uber.jenkins.phabricator.lint.LintResults;
 import com.uber.jenkins.phabricator.unit.UnitResults;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
+import net.sf.json.JSONArray;
 
 import java.io.IOException;
 import java.util.Map;
@@ -144,6 +145,27 @@ public class DifferentialClient {
         // NOTE: When you run this with `arc call-conduit dfferential.getcommitmessage` (from the command-line),
         // it comes back as "response". But it's "result" when running through this conduit API.
         return query.getString("result");
+    }
+
+    /**
+     * Fetch the revision info. This isn't available on the diff, so it requires a separate query.
+     * @param ids The IDs of the revisions, e.g. for "D123" this would be "123"
+     * @return status
+     * @throws ConduitAPIException
+     * @throws IOException
+     */
+    public String getRevisionStatus(String revisionID) throws ConduitAPIException, IOException {
+        JSONObject params = new JSONObject().element("ids", new String[]{revisionID});
+        JSONObject query = callConduit("differential.query", params);
+
+        // NOTE: Sample: {"error":null,"errorMessage":null,"response":[{"id":"7393","phid":"PHID-DREV-vllbfhn7rh4elfa5tsmn",
+        // "title":"rev name","uri":"https:\/\/phab.task4work.info\/D7393","dateCreated":"1504184432","dateModified":"1505254235",
+        // "authorPHID":"PHID-USER-aeabv6ouif37uzyzszsx","status":"5","statusName":"Changes Planned"
+        JSONArray response = query.getJSONArray("result");
+        if (response.isEmpty() || response.getJSONObject(0).isEmpty()) {
+            return null;
+        }
+        return response.getJSONObject(0).getString("statusName");
     }
 
     protected JSONObject callConduit(String methodName, JSONObject params) throws ConduitAPIException, IOException {

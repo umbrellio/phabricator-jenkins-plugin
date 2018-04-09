@@ -88,12 +88,20 @@ public abstract class BuildIntegrationTest {
     }
 
     protected FreeStyleBuild buildWithConduit(JSONObject queryDiffsResponse, JSONObject postCommentResponse, JSONObject sendMessageResponse, boolean harbormaster) throws Exception {
+        JSONObject queryResponse = JSONObject.fromObject("{\"result\":[{\"id\":\"7420\",\"phid\":\"PHID-DREV\",\"title\":\"rev name\",\"status\":\"1\",\"statusName\":\"Pending\"}]}");
+        return buildWithConduit(queryDiffsResponse, postCommentResponse, sendMessageResponse, queryResponse, harbormaster);
+    }
+
+    protected FreeStyleBuild buildWithConduit(JSONObject queryDiffsResponse, JSONObject postCommentResponse, JSONObject sendMessageResponse, JSONObject queryResponse, boolean harbormaster) throws Exception {
         Map<String, JSONObject> responses = new HashMap<String, JSONObject>();
         if (queryDiffsResponse != null) {
             responses.put("differential.querydiffs", queryDiffsResponse);
         }
         if (postCommentResponse != null) {
             responses.put("differential.createcomment", postCommentResponse);
+        }
+        if (queryResponse != null) {
+            responses.put("differential.query", queryResponse);
         }
         if (sendMessageResponse != null) {
             responses.put("harbormaster.sendmessage", sendMessageResponse);

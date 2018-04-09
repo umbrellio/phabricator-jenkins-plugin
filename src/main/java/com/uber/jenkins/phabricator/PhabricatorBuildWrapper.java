@@ -55,6 +55,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.util.Arrays;
+
 public class PhabricatorBuildWrapper extends BuildWrapper {
     private static final String CONDUIT_TAG = "conduit";
     private static final String DEFAULT_GIT_PATH = "git";
@@ -62,6 +64,7 @@ public class PhabricatorBuildWrapper extends BuildWrapper {
     private static final String DIFFERENTIAL_AUTHOR = "PHABRICATOR_DIFFERENTIAL_AUTHOR";
     private static final String DIFFERENTIAL_BASE_COMMIT = "PHABRICATOR_DIFFERENTIAL_BASE_COMMIT";
     private static final String DIFFERENTIAL_BRANCH = "PHABRICATOR_DIFFERENTIAL_BRANCH";
+    private static final String[] REJECT_STATUSES = { "Changes Planned", "Needs Revision" };
 
     private final boolean createCommit;
     private final boolean applyToMaster;
@@ -148,9 +151,14 @@ public class PhabricatorBuildWrapper extends BuildWrapper {
         try {
             diff = new Differential(diffClient.fetchDiff());
             diff.setCommitMessage(diffClient.getCommitMessage(diff.getRevisionID(false)));
+            String status = diffClient.getRevisionStatus(diff.getRevisionID(false));
             diff.decorate(build, this.getPhabricatorURL(build.getParent()));
 
             logger.info(CONDUIT_TAG, "Fetching differential from Conduit API");
+
+            if (Arrays.asList(REJECT_STATUSES).contains( status )) {
+                throw new ConduitAPIException("The revision has status: " + status);
+            }
 
             envAdditions.put(DIFFERENTIAL_AUTHOR, diff.getAuthorEmail());
             envAdditions.put(DIFFERENTIAL_BASE_COMMIT, diff.getBaseCommit());

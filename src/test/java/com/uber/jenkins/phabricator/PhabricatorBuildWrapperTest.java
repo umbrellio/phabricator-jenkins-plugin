@@ -105,6 +105,16 @@ public class PhabricatorBuildWrapperTest extends BuildIntegrationTest {
     }
 
     @Test
+    public void testBuildFailDueToStatus() throws Exception {
+        JSONObject commentResponse = new JSONObject();
+        JSONObject queryResponse = JSONObject.fromObject("{\"result\":[{\"id\":\"7420\",\"phid\":\"PHID-DREV\",\"title\":\"rev name\",\"status\":\"1\",\"statusName\":\"Changes Planned\"}]}");
+        FreeStyleBuild build = buildWithConduit(getFetchDiffResponse(), commentResponse, null, queryResponse, true);
+
+        assertEquals(Result.FAILURE, build.getResult());
+        assertFailureWithMessage("The revision has status: Changes Planned", build);
+    }
+
+    @Test
     public void testBuildValidWithoutHarbormaster() throws Exception {
         JSONObject commentResponse = new JSONObject();
         FreeStyleBuild build = buildWithConduit(getFetchDiffResponse(), commentResponse, null, false);
